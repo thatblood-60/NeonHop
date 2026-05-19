@@ -574,13 +574,25 @@ body{font-family:'Rajdhani',sans-serif;color:var(--text);touch-action:none;}
     }
   };
 
+  // _firebaseLoginSuccess hazır olana kadar bekle
+  async function waitForLoginSuccess(u) {
+    let tries = 0;
+    while (!window._firebaseLoginSuccess && tries < 50) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (window._firebaseLoginSuccess) {
+      window._firebaseLoginSuccess(u);
+    }
+  }
+
   // Sayfa yüklenince redirect sonucunu kontrol et
   getRedirectResult(auth).then(async (result) => {
     if (result && result.user) {
       const firebaseUser = result.user;
       const userData = await loadOrCreateFirestoreUser(firebaseUser);
       const u = { ...userData, uid: firebaseUser.uid, isFirebase: true, pass: '' };
-      window._firebaseLoginSuccess(u);
+      await waitForLoginSuccess(u);
     }
   }).catch((e) => {
     console.error("Redirect result hatası:", e);
@@ -597,8 +609,8 @@ body{font-family:'Rajdhani',sans-serif;color:var(--text);touch-action:none;}
       try {
         const userData = await loadOrCreateFirestoreUser(firebaseUser);
         const u = { ...userData, uid: firebaseUser.uid, isFirebase: true, pass: '' };
-        window._firebaseLoginSuccess(u);
-      } catch(e) {}
+        await waitForLoginSuccess(u);
+      } catch(e) { console.error(e); }
     }
   });
 </script>
